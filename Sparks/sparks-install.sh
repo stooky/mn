@@ -217,9 +217,9 @@ export EDITOR=nano
 (crontab -l -u masternode 2>/dev/null; echo '* * * * * cd /home/masternode/sentinel && ./venv/bin/python bin/sentinel.py >/dev/null 2>&1') | sudo crontab -u masternode -
 cd ~
 # Configuring monit
-wget https://raw.githubusercontent.com/digitalmine/Guide/master/polis_node.sh
-wget https://github.com/stooky/mn/Sparks/sparks-node.sh
+wget https://raw.githubusercontent.com/stooky/mn/master/Sparks/sparks-node.sh
 chmod u+x sparks-node.sh
+
 
 # Add alias to run Sparks-cli
 #echo && echo "Masternode setup complete!"
