@@ -1,0 +1,6 @@
+PhilsCurrency
+http://www.philscurrency.com/
+requires: 12,000 PHILS
+
+1. GUI Wallet
+
