@@ -149,7 +149,7 @@ sleep 3
 cd
 unzip ~/poliscore-1.2.0-linux.zip
 sudo cp ~/poliscore-1.2.0-linux/usr/local/bin/polis{d,-cli} /usr/bin
-rm - poliscore-1.2.0-linux.zip
+rm -rf poliscore-1.2.0-linux.zip
 
 # Create config for poliscore
 echo && echo "Configuring poliscore-1.2.0..."
@@ -203,7 +203,7 @@ echo && echo "Installing Sentinel..."
 echo
 sleep 3
 sudo apt-get -y install virtualenv python-pip
-git clone https://github.com/polispay/sentinel /home/polis/sentinel
+git clone https://github.com/polispay/sentinel /home/$USER/sentinel
 cd /home/$USER/sentinel
 virtualenv venv
 . venv/bin/activate
@@ -211,37 +211,3 @@ pip install -r requirements.txt
 export EDITOR=nano
 (crontab -l -u $USER 2>/dev/null; echo '* * * * * cd /home/$USER/sentinel && ./venv/bin/python bin/sentinel.py >/dev/null 2>&1') | sudo crontab -u polis -
 cd ~
-# Configuring monit
-
-
-
-PID_FILE='/home/$USER/.poliscore/polisd.pid'
-
-start() {
-       touch $PID_FILE
-       eval "/bin/su $USER -c '/usr/bin/polisd 2>&1 >> /dev/null'"
-       PID=$(ps aux | grep polisd | grep -v grep | awk '{print $2}')
-       echo "Starting polisd with PID $PID"
-       echo $PID > $PID_FILE
-}
-stop () {
-       pkill polisd
-       rm $PID_FILE
-       echo "Stopping polisd"
-}
-
-case $1 in
-    start)
-       start
-       ;;
-    stop)  
-       stop
-       ;;
-     *)  
-       echo "usage: polisd {start|stop}" ;;
- esac
- exit 0
- 
-wget https://raw.githubusercontent.com/digitalmine/Guide/master/polis_node.sh
-chmod u+x polis_node.sh
-
