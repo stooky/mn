@@ -1,91 +1,58 @@
-#/bin/bash
+#!/bin/bash
+
+
+# variables for reuse
+REQUIRED_DISTR="Ubuntu 16.04"
+DISTR_CODENAME="xenial"
+POLIS_VERSION=1.2.0
+CRON_SENTINEL='* * * * * cd ~/sentinel && ./venv/bin/python bin/sentinel.py >/dev/null 2>&1'
+TMP_DIR=/tmp
 
 clear
-cd ~
-echo "*************************************************************************"
-echo "* Ubuntu 16.04 is the recommended opearting system for this install.    *"
-echo "*                                                                       *"
-echo "* This script will install and configure your polis masternode          *"
-echo "*                         v1.2.0                                        *"
-echo "*************************************************************************"
-echo && echo && echo
-echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-echo "!                                                 !"
-echo "! Make sure you double check before hitting enter !"
-echo "!                                                 !"
-echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-echo && echo && echo
-sleep 3
-
-# Check for systemd
-systemctl --version >/dev/null 2>&1 || { echo "systemd is required. Are you using Ubuntu 16.04?"  >&2; exit 1; }
-
-# Gather input from user
-
-read -e -p "Masternode Private Key (e.g. 31o6u1Ga4WxFog2b8QP9bQMrfbUtRj2tSk7sZVM9sryvQHamkyM) : " key
-if [[ "$key" == "" ]]; then
-    echo "WARNING: No private key entered, exiting!!!"
-    echo && exit
-fi
-read -e -p "Server IP Address : " ip
-echo && echo "Pressing ENTER will use the default value for the next prompts."
-echo && sleep 3
-read -e -p "Add swap space? (Recommended) [Y/n] : " add_swap
-if [[ ("$add_swap" == "y" || "$add_swap" == "Y" || "$add_swap" == "") ]]; then
-    read -e -p "Swap Size [2G] : " swap_size
-    if [[ "$swap_size" == "" ]]; then
-        swap_size="2G"
-    fi
-fi
-read -e -p "Install Fail2ban? (Recommended) [Y/n] : " install_fail2ban
-read -e -p "Install UFW and configure ports? (Recommended) [Y/n] : " UFW
-
-# Add swap if needed
-if [[ ("$add_swap" == "y" || "$add_swap" == "Y" || "$add_swap" == "") ]]; then
-    if [ ! -f /swapfile ]; then
-        echo && echo "Adding swap space..."
-        sleep 3
-        sudo fallocate -l $swap_size /swapfile
-        sudo chmod 600 /swapfile
-        sudo mkswap /swapfile
-        sudo swapon /swapfile
-        echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
-        sudo sysctl vm.swappiness=10
-        sudo sysctl vm.vfs_cache_pressure=50
-        echo 'vm.swappiness=10' | sudo tee -a /etc/sysctl.conf
-        echo 'vm.vfs_cache_pressure=50' | sudo tee -a /etc/sysctl.conf
-    else
-        echo && echo "WARNING: Swap file detected, skipping add swap!"
-        sleep 3
-    fi
-fi
-
-
-
-# Update system
-echo && echo "Upgrading system..."
+echo "********************************************************************************************************"
+echo "  This script will install and configure polis masternode, sentinel and monit monitoring"
 echo
-sleep 3
+echo "  v$POLIS_VERSION"
+echo "********************************************************************************************************"
+echo
+echo
+
+lsb_release -sc | grep "$DISTR_CODENAME" &> /dev/null
+if [[ $? -ne 0 ]]; then
+    echo "$REQUIRED_DISTR is required. Are you using $REQUIRED_DISTR?"
+    exit 1
+fi
+
+read -e -p "Enter Masternode Private Key (e.g. 31o6u1Ga4WxFog2b8QP9bQMrfbUtRj2tSk7sZVM9sryvQHamkyM) : " private_key
+if [[ "$private_key" == "" ]]; then
+    echo "WARNING: No private key entered, exiting!"
+    exit 1
+fi
+
+read -e -p "Enter server IP address : " server_ip
+
+echo
+echo "Installing bitcoin PPA..."
+echo
+
 sudo apt-get -y update
-sudo apt-get -y upgrade
-
-# Add Berkely PPA
-echo && echo "Installing bitcoin PPA..."
-echo
-sleep 3
+# install ppa
 sudo apt-get -y install software-properties-common
+# Add Berkely PPA
 sudo apt-add-repository -y ppa:bitcoin/bitcoin
+# update repository to include Berkely
 sudo apt-get -y update
 
 # Install required packages
-echo && echo "Installing base packages and dependencies..."
 echo
-sleep 3
+echo "Installing base packages and dependencies..."
+echo
+
 sudo apt-get -y install \
     wget \
     git \
+    zip \
     unzip \
-    monit \
     libevent-dev \
     libboost-dev \
     libboost-chrono-dev \
@@ -105,70 +72,49 @@ sudo apt-get -y install \
     libssl-dev \
     libevent-dev \
     bsdmainutils \
-    libzmq3-dev
+    libzmq3-dev \
+    virtualenv \
+    python-pip \
 
 
-# Install fail2ban if needed
-if [[ ("$install_fail2ban" == "y" || "$install_fail2ban" == "Y" || "$install_fail2ban" == "") ]]; then
-    echo && echo "Installing fail2ban (intrusion prevention software that protects computer servers from brute-force attacks)..."
-    echo
-    sleep 3
-    sudo apt-get -y install fail2ban
-    sudo service fail2ban restart
-fi
-
-# Install firewall if needed
-if [[ ("$UFW" == "y" || "$UFW" == "Y" || "$UFW" == "") ]]; then
-    echo && echo "Installing UFW (Uncomplicated Firewall)..."
-    echo
-    sleep 3
-    sudo apt-get -y install ufw
-    echo && echo "Configuring UFW..."
-    sleep 3
-    sudo ufw default deny incoming
-    sudo ufw default allow outgoing
-    sudo ufw allow ssh
-    sudo ufw allow 24126/tcp
-
-
-    sudo ufw enable
-    echo && echo "Firewall installed and enabled!"
-fi
-
-# Download polis
-echo && echo "Downloading polis v1.2.0..."
 echo
-sleep 3
-wget https://github.com/polispay/polis/releases/download/v1.2.0/poliscore-1.2.0-linux.zip
+echo "Downloading polis v${POLIS_VERSION}..."
+echo
 
+# Download polis to temp directory, show only progress of downloading
+wget -q --show-progress https://github.com/polispay/polis/releases/download/v${POLIS_VERSION}/poliscore-${POLIS_VERSION}-linux.zip -O ${TMP_DIR}/poliscore-${POLIS_VERSION}-linux.zip
 
 # Install polis
-echo && echo "Installing poliscore-1.2.0..."
 echo
-sleep 3
-cd
-unzip ~/poliscore-1.2.0-linux.zip
-sudo cp ~/poliscore-1.2.0-linux/usr/local/bin/polis{d,-cli} /usr/bin
-rm -rf poliscore-1.2.0-linux.zip
+echo "Installing poliscore-${POLIS_VERSION}..."
+echo
+
+cd ~
+# overwrite files if exists 
+unzip -o ${TMP_DIR}/poliscore-${POLIS_VERSION}-linux.zip
+# copy binary 
+sudo cp ~/poliscore-${POLIS_VERSION}-linux/usr/local/bin/polis{d,-cli} /usr/bin
+# delete tmp file
+rm -f ${TMP_DIR}/poliscore-${POLIS_VERSION}-linux.zip
+
+echo
+echo "Configuring poliscore-${POLIS_VERSION}..."
+echo
 
 # Create config for poliscore
-echo && echo "Configuring poliscore-1.2.0..."
-echo
-sleep 3
-rpcuser=`cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1`
-rpcpassword=`cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1`
-mkdir -p /home/$USER/.poliscore
-touch /home/$USER/.poliscore/polis.conf
-echo '
-rpcuser='$rpcuser'
-rpcpassword='$rpcpassword'
+mkdir -p "/home/${USER}/.poliscore"
+rpcuser=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
+rpcpassword=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
+cat << EOF > "/home/${USER}/.poliscore/polis.conf"
+rpcuser=$rpcuser
+rpcpassword=$rpcpassword
 rpcallowip=127.0.0.1
 listen=1
 server=1
 logtimestamps=1
 maxconnections=256
-externalip='$ip'
-masternodeprivkey='$key'
+externalip=$server_ip
+masternodeprivkey=$private_key
 masternode=1
 addnode=174.138.60.69:24126
 addnode=192.243.103.182:24126
@@ -194,20 +140,101 @@ addnode=148.251.87.57
 addnode=185.63.190.56
 addnode=217.61.97.251
 addnode=217.182.166.152
-' | tee /home/$USER/.poliscore/polis.conf
-# start polisd
-polisd -daemon
+EOF
 
-# Download and install sentinel
-echo && echo "Installing Sentinel..."
+# create systemd service unit
+echo "Create systemd service..."
+
+cat << EOF | sudo tee "/etc/systemd/system/polisd@${USER}.service" > /dev/null
+[Unit]
+Description=Polis daemon
+
+[Service]
+User=%i
+ExecStart=/usr/bin/polisd
+PIDFile=/home/%i/.poliscore/polisd.pid
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+echo "Start polisd service..."
+# apply new unit
+sudo systemctl daemon-reload
+# enable autostart for polisd
+sudo systemctl enable "polisd@${USER}.service"
+# start polisd
+sudo systemctl start "polisd@${USER}.service"
+
 echo
-sleep 3
-sudo apt-get -y install virtualenv python-pip
-git clone https://github.com/polispay/sentinel /home/$USER/sentinel
-cd /home/$USER/sentinel
+echo "Installing Sentinel..."
+echo
+# Download and install sentinel with requirements
+# if directory exists - do pull
+if ! test -d "/home/${USER}/sentinel"; then
+    git clone https://github.com/polispay/sentinel "/home/${USER}/sentinel"
+else
+    cd "/home/${USER}/sentinel"
+    git pull
+fi
+
+cd "/home/${USER}/sentinel"
 virtualenv venv
-. venv/bin/activate
+source venv/bin/activate
 pip install -r requirements.txt
-export EDITOR=nano
-(crontab -l -u $USER 2>/dev/null; echo '* * * * * cd /home/$USER/sentinel && ./venv/bin/python bin/sentinel.py >/dev/null 2>&1') | sudo crontab -u polis -
+
+echo
+echo "Add cron job for sentinel..."
+echo
+# if we already have record in cron - do not add it again
+crontab -l | grep "$CRON_SENTINEL" &> /dev/null
+if [[ $? -ne 0 ]]; then
+    (crontab -l 2>/dev/null && echo "$CRON_SENTINEL") | crontab -
+fi
 cd ~
+
+
+echo
+echo Install and configure monit...
+echo
+
+# install monit
+sudo apt-get install -y monit
+
+echo
+echo Create monit configuration file...
+cat << EOF | sudo tee /etc/monit/conf-available/polisd > /dev/null
+# monitor polisd
+check process polisd with pidfile /home/${USER}/.poliscore/polisd.pid
+    start program = "/bin/systemctl start polisd@${USER}" with timeout 60 seconds
+    stop program  = "/bin/systemctl stop polisd@${USER}"
+
+# mail settings
+set mail-format {
+  from: monit@polis.com
+  subject: monit alert --  $EVENT
+  message: $EVENT Service $SERVICE
+                Date:        $DATE
+                Action:      $ACTION
+                Host:        $HOST
+                Description: $DESCRIPTION
+}
+
+set mailserver mail.nodegold.com port 587
+  username postmaster@example.com password "password"
+# using TLSV1 with timeout 30 seconds # uncomment if use TLS
+set alert sysadmin@example.com # email address which will receive monit alerts
+EOF
+
+echo Enable monit configuraton...
+# enable config if not enabled
+if ! test -h /etc/monit/conf-enabled/polisd; then
+    sudo ln -s /etc/monit/conf-available/polisd /etc/monit/conf-enabled/polisd
+fi
+
+echo Restart monit...
+sudo systemctl restart monit
+
+echo
+echo Done.
+echo
