@@ -1,5 +1,4 @@
-echo && echo "Pressing ENTER will use the default value for the next prompts."
-echo && sleep 3
+
 read -e -p "Add swap space? (Recommended) [Y/n] : " add_swap
 if [[ ("$add_swap" == "y" || "$add_swap" == "Y" || "$add_swap" == "") ]]; then
     read -e -p "Swap Size [2G] : " swap_size
@@ -37,7 +36,6 @@ if [[ ("$add_swap" == "y" || "$add_swap" == "Y" || "$add_swap" == "") ]]; then
 fi
 
 
-
 # Install firewall if needed
 if [[ ("$UFW" == "y" || "$UFW" == "Y" || "$UFW" == "") ]]; then
     echo && echo "Installing UFW..."
@@ -48,3 +46,7 @@ if [[ ("$UFW" == "y" || "$UFW" == "Y" || "$UFW" == "") ]]; then
     sudo ufw default deny incoming
     sudo ufw default allow outgoing
     sudo ufw allow ssh
+    sudo ufw allow $port/tcp
+    echo "y" | sudo ufw enable
+    echo && echo "Firewall installed and enabled!"
+fi
