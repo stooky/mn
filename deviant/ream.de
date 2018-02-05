@@ -5,8 +5,8 @@ Follow the installation guide found here:
 <link>
 
 To download these files onto your VPS from the command line, type the following:
-wget http://
-wget http://
+wget https://github.com/stooky/mn/raw/master/deviant/dev1.sh
+wget https://github.com/stooky/mn/raw/master/deviant/dev2.sh
 
 Once downloaded, make the files executable by typing in the following:
 chmod +x dev*
