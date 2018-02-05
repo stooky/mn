@@ -1,0 +1,28 @@
+dev1.sh - script for a 1st time Deviant installation.
+dev2.sh - script for a 2nd time Deviant installation.
+
+Follow the installation guide found here:
+<link>
+
+To download these files onto your VPS from the command line, type the following:
+wget http://
+wget http://
+
+Once downloaded, make the files executable by typing in the following:
+chmod +x dev*
+
+For your 1st time installation run the dev1.sh script by typing in:
+./dev1.sh
+
+For your 2nd time installation you must:
+1. Copy the Deviantd file from your first server to the same directory as dev2.sh
+ a) sftp user@first_server_ip
+ b) login with password
+ c) type in: get /usr/local/bin/Deviantd
+ d) type in: bye
+ 
+ 2. Run the script by typing in:
+ ./dev2.sh
+ 
+ Once you are done, you can remove the dev1.sh and dev2.sh files.
+ 
