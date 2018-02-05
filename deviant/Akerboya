@@ -4,6 +4,10 @@ Here is some information to test the scripts. read the ream.de file in this same
 
 https://github.com/stooky/mn/tree/master/deviant
 
+CREATE A USER ON EACH SERVER
+
+adduser dev1
+
 **************************************
 * Test Server1 for Script (dev1.sh)
 **************************************
