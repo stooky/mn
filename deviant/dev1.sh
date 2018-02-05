@@ -74,6 +74,10 @@ fi
 echo "#"
 echo "#"
 
+# Updates
+apt-get -y update
+apt-get -y upgrade
+
 # Add swap if needed
 if [[ ("$add_swap" == "y" || "$add_swap" == "Y" || "$add_swap" == "") ]]; then
     if [ ! -f /swapfile ]; then
@@ -175,7 +179,8 @@ sudo apt-get -y install \
     libgmp3-dev \
 
 
-
+apt-get -y update
+apt-get -y upgrade
 
 # Create the configuration file
 
@@ -213,10 +218,9 @@ masternodeprivkey='$key'
 	echo "."
 	git clone https://github.com/Deviantcoin/Source.git	
 	cd ./Source/src
-	make -f makefile.unix.dud
-	cp /usr/local/bin/Deviantd /tmp             
-	# cp ./Deviantd /usr/local/bin
-	cd ~
+	make -f makefile.unix
+	cp ./Deviantd /usr/local/bin
+	cd ../.. 
 	rm -rf ./Source
 
 	echo "."
