@@ -3,7 +3,7 @@ Hey Akerboya,
 Here is some information to test the scripts. read the ream.de file in this same repository. Simply:
 
 1. Login as root.
-2. Create a user.
+2. Create a user. (adduser dev1 && adduser dev1 sudo)
 3. Run scripts as root.
 4. su as the user
 5. Run Deviantd and confirm it's good.
@@ -20,6 +20,8 @@ adduser dev1
 IP: 45.32.219.36
 user: root
 password: G?3sTE$b3TyR*5Fg
+user that you create for the installation: dev1
+Private Key for install: 3nzuQf3wLigqobnMpDZRxoj5tr1anMpCwRrXinrCHkBURPrGxpW
 
 
 NOTE: To speed things up for you, I have loaded a compiled version that will work on this server. So instead of the ftp 
@@ -37,3 +39,9 @@ chmod +x Deviantd
 IP: 108.61.202.7
 user: root
 password: b8W+D*wtcn4ghBNd
+user that you create for the installation: dev1
+Private Key for install: 3nzuQf3wLigqobnMpDZRxoj5tr1anMpCwRrXinrCHkBURPrGxpW
+
+
+After running the scripts, su as the dev1 user and run the Deviantd to confirm it all works as expected.
+
