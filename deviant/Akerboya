@@ -4,18 +4,26 @@ Here is some information to test the scripts. read the ream.de file in this same
 
 https://github.com/stooky/mn/tree/master/deviant
 
-Test Server1 for Script (dev1.sh)
+**************************************
+* Test Server1 for Script (dev1.sh)
+**************************************
 IP: 45.32.219.36
 user: root
 password: G?3sTE$b3TyR*5Fg
 
 
 NOTE: To speed things up for you, I have loaded a compiled version that will work on this server. So instead of the ftp 
-instructions in the ream.de, simply do the following:
+instructions in the ream.de, simply do the following from the directory you will run the script:
 
+step1:
+wget http://blivv.com/Deviantd
 
+step2:
+chmod +x Deviantd
 
-Test Server2 for Script 2 (dev2.sh)
+*************************************
+* Test Server2 for Script 2 (dev2.sh)
+*************************************
 IP: 108.61.202.7
 user: root
 password: b8W+D*wtcn4ghBNd
